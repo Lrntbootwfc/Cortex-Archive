@@ -1,0 +1,82 @@
+from django.db import models
+from django.contrib.auth.models import User
+from django.utils import timezone
+
+class UserProfile(models.Model):
+    user = models.OneToOneField(User, on_delete=models.CASCADE, related_name='profile')
+    experience_points = models.IntegerField(default=0)
+    level = models.IntegerField(default=1)
+    bio = models.TextField(blank=True)
+    avatar = models.ImageField(upload_to='avatars/', null=True, blank=True)
+    date_created = models.DateTimeField(auto_now_add=True)
+    date_updated = models.DateTimeField(auto_now=True)
+
+    def __str__(self):
+        return f"{self.user.username}'s Profile"
+
+    class Meta:
+        verbose_name = "User Profile"
+        verbose_name_plural = "User Profiles"
+
+class JournalEntry(models.Model):
+    MOOD_CHOICES = [
+        ('happy', 'Happy'),
+        ('sad', 'Sad'),
+        ('excited', 'Excited'),
+        ('calm', 'Calm'),
+        ('anxious', 'Anxious'),
+        ('angry', 'Angry'),
+        ('grateful', 'Grateful'),
+        ('other', 'Other'),
+    ]
+    
+    user = models.ForeignKey(User, on_delete=models.CASCADE, related_name='journal_entries')
+    title = models.CharField(max_length=255)
+    content = models.JSONField(blank=True, null=True)  # Compatible with Lexical editor
+    date_created = models.DateTimeField(auto_now_add=True)
+    date_updated = models.DateTimeField(auto_now=True)
+    mood_tag = models.CharField(max_length=50, choices=MOOD_CHOICES, blank=True)
+    is_locked = models.BooleanField(default=False)
+    
+    def __str__(self):
+        return f"{self.title} - {self.user.username}"
+    
+    class Meta:
+        verbose_name = "Journal Entry"
+        verbose_name_plural = "Journal Entries"
+        ordering = ['-date_created']
+
+class MediaAsset(models.Model):
+    FILE_TYPE_CHOICES = [
+        ('image', 'Image'),
+        ('video', 'Video'),
+        ('audio', 'Audio'),
+        ('document', 'Document'),
+        ('other', 'Other'),
+    ]
+    
+    journal_entry = models.ForeignKey(JournalEntry, on_delete=models.CASCADE, related_name='media_assets')
+    file = models.FileField(upload_to='media/')
+    file_type = models.CharField(max_length=50, choices=FILE_TYPE_CHOICES)
+    caption = models.CharField(max_length=255, blank=True)
+    date_uploaded = models.DateTimeField(auto_now_add=True)
+    
+    def __str__(self):
+        return f"{self.file.name} - {self.journal_entry.title}"
+    
+    class Meta:
+        verbose_name = "Media Asset"
+        verbose_name_plural = "Media Assets"
+
+class ComicEntry(models.Model):
+    journal_entry = models.OneToOneField(JournalEntry, on_delete=models.CASCADE, related_name='comic_entry')
+    comic_image = models.ImageField(upload_to='comics/')
+    date_generated = models.DateTimeField(auto_now_add=True)
+    generation_prompt = models.TextField(blank=True)
+    
+    def __str__(self):
+        return f"Comic for {self.journal_entry.title}"
+    
+    class Meta:
+        verbose_name = "Comic Entry"
+        verbose_name_plural = "Comic Entries"

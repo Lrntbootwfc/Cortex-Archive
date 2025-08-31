@@ -1,0 +1,17 @@
+@"
+# Virtual environment
+venv_final/
+
+# Database file
+*.sqlite3
+
+# Python temporary files
+__pycache__/
+*.pyc
+
+# IDE files
+.vscode/
+
+# Media files
+media/
+"@ | Out-File .gitignore

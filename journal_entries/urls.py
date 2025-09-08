@@ -14,5 +14,5 @@ router.register(r'register', UserRegistrationView, basename='user-register')
 
 urlpatterns = [
     path('', include(router.urls)),
-    path('create-comic/', JournalEntryViewSet.as_view({'post': 'create'}), name='create-comic'),
+    # path('create-comic/', JournalEntryViewSet.as_view({'post': 'create'}), name='create-comic'),
 ]

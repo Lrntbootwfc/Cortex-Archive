@@ -14,7 +14,7 @@ urlpatterns = [
     path('api/token/refresh/', TokenRefreshView.as_view(), name='token_refresh'),
     path('api/users/', UserLookupView.as_view(), name='user-lookup'),
     path('api/', include('journal_entries.urls')),
-    path('api/', include('gamification.urls')),
+    path('api/gamification/', include('gamification.urls')),
 ]
 
 if settings.DEBUG:

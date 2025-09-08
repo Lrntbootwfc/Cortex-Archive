@@ -96,8 +96,15 @@ class Character(models.Model):
     relationship = models.CharField(max_length=100, blank=True)  # friend, family, etc.
     avatar = models.ImageField(upload_to='character_avatars/', blank=True, null=True)
     created_at = models.DateTimeField(auto_now_add=True)
+    
+    def __str__(self):
+        return f"{self.name} ({self.user.username})"
+
 
 class CharacterAssignment(models.Model):
     journal_entry = models.ForeignKey(JournalEntry, on_delete=models.CASCADE)
     character = models.ForeignKey(Character, on_delete=models.CASCADE)
     role = models.CharField(max_length=100)  # main_character, mentioned, etc.
+    
+    def __str__(self):
+        return f"{self.character.name} in {self.journal_entry.title} as {self.role}"

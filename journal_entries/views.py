@@ -9,7 +9,7 @@ from .models import UserProfile, JournalEntry, MediaAsset, ComicEntry, Character
 from .serializers import (
     UserProfileSerializer, JournalEntrySerializer, MediaAssetSerializer,
     ComicEntrySerializer, JournalEntryCreateSerializer, JournalEntryUpdateSerializer,
-    UserRegistrationSerializer, CharacterSerializer
+    UserRegistrationSerializer, CharacterSerializer, CharacterAssignmentSerializer
 )
 from rest_framework_simplejwt.tokens import RefreshToken
 
@@ -182,3 +182,13 @@ class CharacterViewSet(viewsets.ModelViewSet):
     
     def perform_create(self, serializer):
         serializer.save(user=self.request.user)
+        
+class CharacterAssignmentViewSet(viewsets.ModelViewSet):
+    serializer_class = CharacterAssignmentSerializer
+    permission_classes = [permissions.IsAuthenticated]
+
+    def get_queryset(self):
+        return CharacterAssignment.objects.filter(journal_entry__user=self.request.user)
+    
+    def perform_create(self, serializer):
+        serializer.save()

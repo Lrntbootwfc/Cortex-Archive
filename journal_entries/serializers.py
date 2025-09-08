@@ -3,7 +3,7 @@
 
 from rest_framework import serializers
 from django.contrib.auth.models import User
-from .models import UserProfile, JournalEntry, MediaAsset, ComicEntry, Character
+from .models import UserProfile, JournalEntry, MediaAsset, ComicEntry, Character, CharacterAssignment
 
 class UserSerializer(serializers.ModelSerializer):
     class Meta:
@@ -29,7 +29,7 @@ class ComicEntrySerializer(serializers.ModelSerializer):
     class Meta:
         model = ComicEntry
         # fields = '__all__'
-        fields = ['id', 'title', 'content', 'mood_tag', 'is_locked']  # only safe fields
+        fields = ['id', 'journal_entry', 'comic_image', 'generation_prompt', 'date_generated']
         read_only_fields = ['date_generated']
 
 class JournalEntrySerializer(serializers.ModelSerializer):
@@ -49,12 +49,12 @@ class JournalEntrySerializer(serializers.ModelSerializer):
 class JournalEntryCreateSerializer(serializers.ModelSerializer):
     class Meta:
         model = JournalEntry
-        fields = ['title', 'content', 'mood_tag', 'is_locked']
+        fields = ['title', 'content', 'mood_tag', 'is_locked', 'folder']
 
 class JournalEntryUpdateSerializer(serializers.ModelSerializer):
     class Meta:
         model = JournalEntry
-        fields = ['title', 'content', 'mood_tag', 'is_locked']
+        fields = ['title', 'content', 'mood_tag', 'is_locked', 'folder']
 
 class UserRegistrationSerializer(serializers.ModelSerializer):
     password = serializers.CharField(write_only=True)
@@ -72,7 +72,27 @@ class UserRegistrationSerializer(serializers.ModelSerializer):
         return user
 
 class CharacterSerializer(serializers.ModelSerializer):
+    
+    user = UserSerializer(read_only=True)
     class Meta:
         # You need to import the Character model at the top of the file
         model = Character
-        fields = ['id', 'name', 'description', 'image'] # Example fields
+        fields = ['id', 'user', 'name', 'description', 'relationship', 'avatar', 'created_at']
+        read_only_fields = ['id', 'user', 'created_at']
+        
+class CharacterAssignmentSerializer(serializers.ModelSerializer):
+    character = CharacterSerializer(read_only=True)
+    journal_entry = JournalEntrySerializer(read_only=True)
+
+    # Allow assigning via IDs
+    character_id = serializers.PrimaryKeyRelatedField(
+        queryset=Character.objects.all(), write_only=True, source='character'
+    )
+    journal_entry_id = serializers.PrimaryKeyRelatedField(
+        queryset=JournalEntry.objects.all(), write_only=True, source='journal_entry'
+    )
+
+    class Meta:
+        model = CharacterAssignment
+        fields = ['id', 'character', 'journal_entry', 'role', 'character_id', 'journal_entry_id']
+        read_only_fields = ['id']

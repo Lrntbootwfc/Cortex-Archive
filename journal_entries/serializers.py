@@ -1,6 +1,9 @@
+#journal_entries/ serializer.py
+
+
 from rest_framework import serializers
 from django.contrib.auth.models import User
-from .models import UserProfile, JournalEntry, MediaAsset, ComicEntry
+from .models import UserProfile, JournalEntry, MediaAsset, ComicEntry, Character
 
 class UserSerializer(serializers.ModelSerializer):
     class Meta:
@@ -25,7 +28,8 @@ class MediaAssetSerializer(serializers.ModelSerializer):
 class ComicEntrySerializer(serializers.ModelSerializer):
     class Meta:
         model = ComicEntry
-        fields = '__all__'
+        # fields = '__all__'
+        fields = ['id', 'title', 'content', 'mood_tag', 'is_locked']  # only safe fields
         read_only_fields = ['date_generated']
 
 class JournalEntrySerializer(serializers.ModelSerializer):
@@ -37,6 +41,10 @@ class JournalEntrySerializer(serializers.ModelSerializer):
         model = JournalEntry
         fields = '__all__'
         read_only_fields = ['user', 'date_created', 'date_updated']
+        
+    def get_comic_entry(self, obj):
+        comic = getattr(obj, 'comic_entry', None)
+        return ComicEntrySerializer(comic).data if comic else None
 
 class JournalEntryCreateSerializer(serializers.ModelSerializer):
     class Meta:
@@ -62,3 +70,9 @@ class UserRegistrationSerializer(serializers.ModelSerializer):
             password=validated_data['password']
         )
         return user
+
+class CharacterSerializer(serializers.ModelSerializer):
+    class Meta:
+        # You need to import the Character model at the top of the file
+        model = Character
+        fields = ['id', 'name', 'description', 'image'] # Example fields

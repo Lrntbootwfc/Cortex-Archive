@@ -1,13 +1,15 @@
+#journal_entries/views.py
+
 from rest_framework import viewsets, permissions, status
 from rest_framework.decorators import action
 from rest_framework.response import Response
 from rest_framework.views import APIView
 from django.contrib.auth.models import User
-from .models import UserProfile, JournalEntry, MediaAsset, ComicEntry
+from .models import UserProfile, JournalEntry, MediaAsset, ComicEntry, Character, CharacterAssignment
 from .serializers import (
     UserProfileSerializer, JournalEntrySerializer, MediaAssetSerializer,
     ComicEntrySerializer, JournalEntryCreateSerializer, JournalEntryUpdateSerializer,
-    UserRegistrationSerializer
+    UserRegistrationSerializer, CharacterSerializer
 )
 from rest_framework_simplejwt.tokens import RefreshToken
 
@@ -73,13 +75,26 @@ class JournalEntryViewSet(viewsets.ModelViewSet):
             if hasattr(journal_entry, 'comic_entry'):
                 return Response({'error': 'A comic for this journal entry already exists.'}, status=status.HTTP_409_CONFLICT)
                 
+            try:
+                character = Character.objects.get(id=character_id, user=request.user)
+            except Character.DoesNotExist:
+                return Response({'error': 'Character not found'}, status=status.HTTP_404_NOT_FOUND)
+            
+            # Create character assignment
+            CharacterAssignment.objects.create(
+                journal_entry=journal_entry,
+                character=character,
+                role='main_character'
+            )
+            
             # Simulate AI processing - for now, just a placeholder image
-            placeholder_image_url = f"https://placehold.co/600x400/007BFF/white?text=Comic+from+Entry+{journal_entry.id}+with+Character+{character_id}"
+            placeholder_image_url = f"https://placehold.co/600x400/007BFF/white?text=Comic+from+Entry+{journal_entry.id}+with+{character.name}"
             
             # Create a new ComicEntry object
             comic = ComicEntry.objects.create(
                 journal_entry=journal_entry,
-                comic_image=placeholder_image_url  # In a real app, this would be a File object
+                comic_image=placeholder_image_url,  # In a real app, this would be a File object
+                generation_prompt=f"Comic featuring {character.name} as main character"
             )
 
             # Return the serialized comic data
@@ -88,7 +103,6 @@ class JournalEntryViewSet(viewsets.ModelViewSet):
 
         except Exception as e:
             return Response({'error': str(e)}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
-
 
 class MediaAssetViewSet(viewsets.ModelViewSet):
     serializer_class = MediaAssetSerializer
@@ -157,3 +171,14 @@ class UserLookupView(APIView):
             except User.DoesNotExist:
                 return Response([], status=status.HTTP_404_NOT_FOUND)
         return Response([], status=status.HTTP_400_BAD_REQUEST)
+    
+    
+class CharacterViewSet(viewsets.ModelViewSet):
+    serializer_class = CharacterSerializer
+    permission_classes = [permissions.IsAuthenticated, IsOwnerOrReadOnly]
+    
+    def get_queryset(self):
+        return Character.objects.filter(user=self.request.user)
+    
+    def perform_create(self, serializer):
+        serializer.save(user=self.request.user)

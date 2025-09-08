@@ -18,6 +18,12 @@ class UserProfile(models.Model):
         verbose_name = "User Profile"
         verbose_name_plural = "User Profiles"
 
+class Folder(models.Model):
+    user = models.ForeignKey(User, on_delete=models.CASCADE)
+    name = models.CharField(max_length=100)
+    color = models.CharField(max_length=7, default='#ffffff')  # Hex color
+    is_locked = models.BooleanField(default=False)
+    created_at = models.DateTimeField(auto_now_add=True)
 class JournalEntry(models.Model):
     MOOD_CHOICES = [
         ('happy', 'Happy'),
@@ -36,6 +42,7 @@ class JournalEntry(models.Model):
     date_created = models.DateTimeField(auto_now_add=True)
     date_updated = models.DateTimeField(auto_now=True)
     mood_tag = models.CharField(max_length=50, choices=MOOD_CHOICES, blank=True)
+    folder = models.ForeignKey(Folder, on_delete=models.SET_NULL, null=True, blank=True)
     is_locked = models.BooleanField(default=False)
     
     def __str__(self):
@@ -80,3 +87,17 @@ class ComicEntry(models.Model):
     class Meta:
         verbose_name = "Comic Entry"
         verbose_name_plural = "Comic Entries"
+
+# models.py
+class Character(models.Model):
+    user = models.ForeignKey(User, on_delete=models.CASCADE)
+    name = models.CharField(max_length=100)
+    description = models.TextField(blank=True)
+    relationship = models.CharField(max_length=100, blank=True)  # friend, family, etc.
+    avatar = models.ImageField(upload_to='character_avatars/', blank=True, null=True)
+    created_at = models.DateTimeField(auto_now_add=True)
+
+class CharacterAssignment(models.Model):
+    journal_entry = models.ForeignKey(JournalEntry, on_delete=models.CASCADE)
+    character = models.ForeignKey(Character, on_delete=models.CASCADE)
+    role = models.CharField(max_length=100)  # main_character, mentioned, etc.

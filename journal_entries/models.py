@@ -20,10 +20,29 @@ class UserProfile(models.Model):
 
 class Folder(models.Model):
     user = models.ForeignKey(User, on_delete=models.CASCADE)
+    parent = models.ForeignKey('self', on_delete=models.CASCADE, null=True, blank=True, related_name='subfolders')
     name = models.CharField(max_length=100)
     color = models.CharField(max_length=7, default='#ffffff')  # Hex color
     is_locked = models.BooleanField(default=False)
+    is_hidden = models.BooleanField(default=False)
     created_at = models.DateTimeField(auto_now_add=True)
+    
+    class Meta:
+        unique_together = ('user', 'parent', 'name')  # nice for Explorer-like behavior
+        ordering = ['name']
+        
+    def clone(self, user, parent=None):
+        """
+        Create a copy of this folder (without subfolders/journals).
+    """
+        return Folder.objects.create(
+            user=user,
+            parent=parent,
+            name=f"{self.name}_copy",
+            color=self.color,
+            is_locked=self.is_locked,
+            is_hidden=self.is_hidden,
+    )
 class JournalEntry(models.Model):
     MOOD_CHOICES = [
         ('happy', 'Happy'),
@@ -42,11 +61,24 @@ class JournalEntry(models.Model):
     date_created = models.DateTimeField(auto_now_add=True)
     date_updated = models.DateTimeField(auto_now=True)
     mood_tag = models.CharField(max_length=50, choices=MOOD_CHOICES, blank=True)
-    folder = models.ForeignKey(Folder, on_delete=models.SET_NULL, null=True, blank=True)
+    folder = models.ForeignKey(Folder, on_delete=models.SET_NULL, null=True, blank=True, related_name='journals')
     is_locked = models.BooleanField(default=False)
     
     def __str__(self):
         return f"{self.title} - {self.user.username}"
+    
+    def clone(self, user, folder=None):
+        """
+    Create a copy of this journal entry.
+    """
+        return JournalEntry.objects.create(
+            user=user,
+            title=f"{self.title} (Copy)",
+            content=self.content,
+            mood_tag=self.mood_tag,
+            folder=folder,
+            is_locked=self.is_locked,
+    )
     
     class Meta:
         verbose_name = "Journal Entry"

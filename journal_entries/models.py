@@ -124,6 +124,7 @@ class ComicEntry(models.Model):
 class Character(models.Model):
     user = models.ForeignKey(User, on_delete=models.CASCADE)
     name = models.CharField(max_length=100)
+    real_life_name = models.CharField(max_length=100, blank=True)
     description = models.TextField(blank=True)
     relationship = models.CharField(max_length=100, blank=True)  # friend, family, etc.
     avatar = models.ImageField(upload_to='character_avatars/', blank=True, null=True)
